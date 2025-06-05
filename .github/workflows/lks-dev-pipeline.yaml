@@ -29,7 +29,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          region: ${{ env.REGION }}
+          aws- region: ${{ env.REGION }}
 
       - name: Login to ECR
         run: |
@@ -96,3 +96,5 @@ jobs:
       - name: Deploy Stack
         run: |
           docker stack deploy -c docker-compose.yml lks-voting-app
+
+
