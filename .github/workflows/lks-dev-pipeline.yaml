@@ -22,7 +22,6 @@ jobs:
           curl -fsSL https://get.docker.com -o get-docker.sh
           sudo sh get-docker.sh
 
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -33,7 +32,7 @@ jobs:
 
       - name: Login to ECR
         run: |
-          aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
+          aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
 
       - name: Build and Push Images
         run: |
@@ -41,13 +40,13 @@ jobs:
           docker build -t result-dev ./result
           docker build -t worker-dev ./worker
 
-          docker tag vote-dev     ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
-          docker tag result-dev   ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
-          docker tag worker-dev   ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
+          docker tag vote-dev     ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
+          docker tag result-dev   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
+          docker tag worker-dev   ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
 
-          docker push ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
-          docker push ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
-          docker push ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
 
   pull-on-master:
     name: Pull Image on Master Node
@@ -58,9 +57,9 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
 
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
 
   pull-on-node1:
     name: Pull Image on Node1
@@ -71,9 +70,9 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
 
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
 
   pull-on-node2:
     name: Pull Image on Node2
@@ -84,9 +83,9 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com
 
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
-          docker pull ${{ 213423567894 }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:vote-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:result-dev-latest
+          docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.REGION }}.amazonaws.com/${{ env.ECR_REPO }}:worker-dev-latest
 
   deploy:
     name: Deploy to Docker Swarm
@@ -96,5 +95,3 @@ jobs:
       - name: Deploy Stack
         run: |
           docker stack deploy -c docker-compose.yml lks-voting-app
-
-
