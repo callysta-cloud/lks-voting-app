@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  vote:
+    image: 213423567894.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+    ports:
+      - "80:80"
+
+  result:
+    image: 213423567894.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+    ports:
+      - "81:80"
+
+  worker:
+    image: 213423567894.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
