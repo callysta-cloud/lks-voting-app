@@ -1,0 +1,83 @@
+name: lks-dev-pipeline
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    name: Build and Push to ECR
+    runs-on: [self-hosted, master]
+    steps:
+      - name: Update Docker
+        run: sudo yum update -y && sudo yum install -y docker
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          region: us-east-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Images
+        run: |
+          docker build -t vote-dev-latest ./vote
+          docker tag vote-dev-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+
+          docker build -t result-dev-latest ./result
+          docker tag result-dev-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+
+          docker build -t worker-dev-latest ./worker
+          docker tag worker-dev-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+
+  pull-master:
+    name: Pull Image on Master
+    runs-on: [self-hosted, master]
+    needs: build
+    steps:
+      - name: Pull All Images
+        run: |
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+
+  pull-node1:
+    name: Pull Image on Node1
+    runs-on: [self-hosted, node1]
+    needs: pull-master
+    steps:
+      - name: Pull All Images
+        run: |
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+
+  pull-node2:
+    name: Pull Image on Node2
+    runs-on: [self-hosted, node2]
+    needs: pull-node1
+    steps:
+      - name: Pull All Images
+        run: |
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+
+  deploy:
+    name: Deploy to Docker Swarm
+    runs-on: [self-hosted, master]
+    needs: pull-node2
+    steps:
+      - name: Deploy Stack
+        run: docker stack deploy -c docker-compose.yml lks-app
