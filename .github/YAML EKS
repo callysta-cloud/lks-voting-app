@@ -1,0 +1,123 @@
+1. vote-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote
+  labels:
+    app: vote
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vote
+  template:
+    metadata:
+      labels:
+        app: vote
+    spec:
+      containers:
+        - name: vote
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-prod-latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: REDIS
+              value: lks-redis:6379
+2. vote-service.yaml
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: vote
+  ports:
+    - port: 80
+      targetPort: 80
+
+
+3. result-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: result
+  labels:
+    app: result
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: result
+  template:
+    metadata:
+      labels:
+        app: result
+    spec:
+      containers:
+        - name: result
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.c
+om/lks-voting-image:result-prod-latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: POSTGRES
+              value: lks-rds:5432
+
+
+
+4. result-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: result-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: result
+  ports:
+    - port: 81
+      targetPort: 80
+
+
+
+5. worker-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-prod-latest
+          env:
+            - name: REDIS
+              value: lks-redis:6379
+            - name: POSTGRES
+              value: lks-rds:5432
+
+
+eks deploy
+bash
+Salin
+Edit
+kubectl apply -f vote-deployment.yaml
+kubectl apply -f vote-service.yaml
+kubectl apply -f result-deployment.yaml
+kubectl apply -f result-service.yaml
+kubectl apply -f worker-deployment.yaml
