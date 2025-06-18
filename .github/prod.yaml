@@ -1,9 +1,9 @@
-name: lks-dev-pipeline
+name: lks-prod-pipeline
 
 on:
   push:
     branches:
-      - dev
+      - prod
 
 jobs:
   build:
@@ -29,55 +29,44 @@ jobs:
 
       - name: Build and Push Images
         run: |
-          docker build -t vote-dev-latest ./vote
-          docker tag vote-dev-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
-          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+          docker build -t vote-prod-latest ./vote
+          docker tag vote-prod-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-prod-latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-prod-latest
 
-          docker build -t result-dev-latest ./result
-          docker tag result-dev-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
-          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+          docker build -t result-prod-latest ./result
+          docker tag result-prod-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-prod-latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-prod-latest
 
-          docker build -t worker-dev-latest ./worker
-          docker tag worker-dev-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
-          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+          docker build -t worker-prod-latest ./worker
+          docker tag worker-prod-latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-prod-latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-prod-latest
 
-  pull-master:
-    name: Pull Image on Master
+  deploy:
+    name: Deploy to ECS and Notify
     runs-on: [self-hosted, master]
     needs: build
     steps:
-      - name: Pull All Images
+      - name: Update ECS Task Definition and Services
         run: |
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+          aws ecs register-task-definition \
+            --cli-input-json file://vote/task-definition.json
+          aws ecs update-service \
+            --cluster lks-voting-cluster \
+            --service lks-vote-service \
+            --force-new-deployment
+          aws ecs update-service \
+            --cluster lks-voting-cluster \
+            --service lks-result-service \
+            --force-new-deployment
+          aws ecs update-service \
+            --cluster lks-voting-cluster \
+            --service lks-worker-service \
+            --force-new-deployment
 
-  pull-node1:
-    name: Pull Image on Node1
-    runs-on: [self-hosted, node1]
-    needs: pull-master
-    steps:
-      - name: Pull All Images
+      - name: Send SNS Notification
         run: |
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+          aws sns publish \
+            --topic-arn ${{ secrets.AWS_SNS_ARN }} \
+            --subject "Helo from <Provinsi>!" \
+            --message "New version The Voting App from <Provinsi> is Released !!"
 
-  pull-node2:
-    name: Pull Image on Node2
-    runs-on: [self-hosted, node2]
-    needs: pull-node1
-    steps:
-      - name: Pull All Images
-        run: |
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
-          docker pull ${{ secrets.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
-
-  deploy:
-    name: Deploy to Docker Swarm
-    runs-on: [self-hosted, master]
-    needs: pull-node2
-    steps:
-      - name: Deploy Stack
-        run: docker stack deploy -c docker-compose.yml lks-app
